@@ -31,7 +31,7 @@ void vTaskFunction(void *pvParameters)
     {
         /* Print out the name of this task . */
         printf(pcTaskName);
-        //printf("Hello");
+        printf("Hello\n");
 
         /* Delay for a period . This time a call to vTaskDelay ()
          is used which places the task into the Blocked state
@@ -58,7 +58,7 @@ void vTaskFunction1(void *pvParameters)
     {
         /* Print out the name of this task . */
         printf(pcTaskName);
-        //printf("Hello");
+        printf("Hello\tYo yo\n");
 
         /* Delay for a period . This time a call to vTaskDelay ()
          is used which places the task into the Blocked state
