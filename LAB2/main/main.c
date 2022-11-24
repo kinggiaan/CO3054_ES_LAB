@@ -19,158 +19,78 @@
 #include "freertos/FreeRTOSConfig.h"
 
 
-void vTaskFunction_Idle(void *pvParameters)
+
+TaskHandle_t Sender = NULL;
+TaskHandle_t Receiver1 = NULL;
+TaskHandle_t Receiver2 = NULL;
+QueueHandle_t queue1,queue2;
+typedef struct
 {
-    char *pcTaskName;
-    const TickType_t xDelay250ms = pdMS_TO_TICKS(250);
-    TickType_t count1000ms = pdMS_TO_TICKS(0);
-    /* The string to print out is passed in via the parameter .
-    Cast this to a character pointer . */
-    pcTaskName = (char *)pvParameters;
-    /* As per most tasks , this task is implemented in
-    an infinite loop . */
-    for (;;)
+int eDataID;
+int lDataValue;
+} Data_t;
+void SendTask(void *arg)
+{	srand(time(NULL));
+
+    Data_t sendData;
+    queue1 = xQueueCreate(5, sizeof(Data_t));
+    queue2 = xQueueCreate(5, sizeof(Data_t));
+    int r;
+
+    if (queue1 == 0)
     {
-        /* Print out the name of this task . */
-        printf(pcTaskName);
-        
-        /* Print chip information */
-        esp_chip_info_t chip_info;
-        esp_chip_info(&chip_info);
-        printf("This is %s chip with %d CPU core(s), WiFi%s%s, ",
-            CONFIG_IDF_TARGET,
-            chip_info.cores,
-            (chip_info.features & CHIP_FEATURE_BT) ? "/BT" : "",
-            (chip_info.features & CHIP_FEATURE_BLE) ? "/BLE" : "");
-
-        printf("silicon revision %d, ", chip_info.revision);
-
-        printf("%dMB %s flash\n", spi_flash_get_chip_size() / (1024 * 1024),
-            (chip_info.features & CHIP_FEATURE_EMB_FLASH) ? "embedded" : "external");
-
-        printf("Minimum free heap size: %d bytes\n", esp_get_minimum_free_heap_size());
-
-
-        /* Delay for a period . This time a call to vTaskDelay ()
-         is used which places the task into the Blocked state
-         until the delay period has expired . The parameter takes
-         a time specified in " ticks " , and the pdMS_TO_TICKS () macro
-         is used ( where the xDelay250ms constant is declared ) to
-        convert 250 milliseconds into an equivalent time in ticks .*/
-        vTaskDelay(xDelay250ms);
-        if (count1000ms == pdMS_TO_TICKS(1000)){
-            taskYIELD();
-        }
-        else count1000ms += pdMS_TO_TICKS(250);
+     printf("Failed to create queue= %s\n", "queue1");
     }
-    vTaskDelete(NULL);
+
+    if (queue2 == 0)
+    {
+     printf("Failed to create queue= %s\n", "queue2");
+    }
+
+    for(;;){
+    	r = rand()% 3;
+    	printf("r is %d:  ",r);
+		sendData.eDataID = rand()%5;
+		sendData.lDataValue= rand()%10;
+    	if(r == 1){
+    		xQueueSend(queue1, &sendData, (TickType_t)0);
+    	}
+		else if(r == 2){
+			xQueueSend(queue2, &sendData, (TickType_t)0);
+    	}
+    	else{
+    		printf ("%s \n", "Error");
+    	}
+        vTaskDelay(1000/ portTICK_RATE_MS);
+    }
 }
-void vTaskFunction2(void *pvParameters)
+
+void ReceiveTask1(void *arg)
 {
-    char *pcTaskName;
-    const TickType_t xDelay250ms = pdMS_TO_TICKS(250);
-    /* The string to print out is passed in via the parameter .
-    Cast this to a character pointer . */
-    pcTaskName = (char *)pvParameters;
-    /* As per most tasks , this task is implemented in
-    an infinite loop . */
-    for (;;)
-    {
-        /* Print out the name of this task . */
-        printf(pcTaskName);
-        printf("Hello \n");
-        /* Delay for a period . This time a call to vTaskDelay ()
-         is used which places the task into the Blocked state
-         until the delay period has expired . The parameter takes
-         a time specified in " ticks " , and the pdMS_TO_TICKS () macro
-         is used ( where the xDelay250ms constant is declared ) to
-        convert 250 milliseconds into an equivalent time in ticks .*/
-        vTaskDelay(xDelay250ms);
-        
+    Data_t rxData;
+    while(1){
+     if( xQueueReceive(queue1, &rxData, (TickType_t)5))
+     {
+      printf("Received data from queue1 == %d\n", rxData.lDataValue);
+      vTaskDelay(1000/ portTICK_RATE_MS);
+     }
     }
-    vTaskDelete(NULL);
 }
-void vTaskFunction1(void *pvParameters)
+void ReceiveTask2(void *arg)
 {
-    char *pcTaskName;
-    const TickType_t xDelay500ms = pdMS_TO_TICKS(500);
-
-    /* The string to print out is passed in via the parameter .
-    Cast this to a character pointer . */
-    pcTaskName = (char *)pvParameters;
-    /* As per most tasks , this task is implemented in
-    an infinite loop . */
-    for (;;)
-    {
-        /* Print out the name of this task . */
-        printf(pcTaskName);
-        printf("Hello\tYo yo\n");
-
-        /* Delay for a period . This time a call to vTaskDelay ()
-         is used which places the task into the Blocked state
-         until the delay period has expired . The parameter takes
-         a time specified in " ticks " , and the pdMS_TO_TICKS () macro
-         is used ( where the xDelay250ms constant is declared ) to
-        convert 250 milliseconds into an equivalent time in ticks .*/
-        vTaskDelay(xDelay500ms);
+    Data_t rxData ;
+    while(1){
+     if( xQueueReceive(queue2, &rxData, (TickType_t)5))
+     {
+	  printf("Received data from queue2 == %d\n", rxData.lDataValue);
+      vTaskDelay(1000/ portTICK_RATE_MS);
+     }
     }
-    vTaskDelete(NULL);
 }
-static const char *pcTextForTask1 = "Task 1 is running \r\n";
-static const char *pcTextForTask2 = "Task 2 is running \r\n";
-static const char *pcTextForTask0 = "Task 0 is running \r\n";
-
 void app_main(void)
 {
-    // printf("Hello world!\n");
+   xTaskCreate(SendTask, "SendTask", 4096, NULL, 10, &Sender);
+   xTaskCreatePinnedToCore(ReceiveTask1, "ReceiveTask1", 4096, NULL,10, &Receiver1, 1);
+   xTaskCreatePinnedToCore(ReceiveTask2, "ReceiveTask2", 4096, NULL,10, &Receiver2, 1);
 
-    // /* Print chip information */
-    // esp_chip_info_t chip_info;
-    // esp_chip_info(&chip_info);
-    // printf("This is %s chip with %d CPU core(s), WiFi%s%s, ",
-    //        CONFIG_IDF_TARGET,
-    //        chip_info.cores,
-    //        (chip_info.features & CHIP_FEATURE_BT) ? "/BT" : "",
-    //        (chip_info.features & CHIP_FEATURE_BLE) ? "/BLE" : "");
-
-    // printf("silicon revision %d, ", chip_info.revision);
-
-    // printf("%dMB %s flash\n", spi_flash_get_chip_size() / (1024 * 1024),
-    //        (chip_info.features & CHIP_FEATURE_EMB_FLASH) ? "embedded" : "external");
-
-    // printf("Minimum free heap size: %d bytes\n", esp_get_minimum_free_heap_size());
-
-    // // for (int i = 10; i >= 0; i--) {
-    // //     printf("Restarting in %d seconds...\n", i);
-    // //     vTaskDelay(1000 / portTICK_PERIOD_MS);
-    // // }
-    // // printf("Restarting now.\n");
-    // // fflush(stdout);
-    // // esp_restart();
-
-    printf("===============\n");
-
-    xTaskCreate(vTaskFunction_Idle, " Task 0 Ilde", 2048,
-                (void *)pcTextForTask0, 0, NULL);
-    /* Create the first task at priority 1.
- The priority is the second to last parameter . */
-    
-
-    /* Create the second task at priority 2 ,
-     which is higher than a priority of 1.
-     The priority is the second to last parameter . */
-    
-
-    //Delay add Task 1 after 1000ms 
-
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
-
-    xTaskCreate(vTaskFunction1, " Task 1", 2048,
-                (void *)pcTextForTask1, 1, NULL);
-    xTaskCreate(vTaskFunction2, " Task 2", 2048,
-                (void *)pcTextForTask2, 0, NULL);
-    /* Start the scheduler so the tasks start executing . */
-    //vTaskStartScheduler();
-
-    /* Will not reach here . */
 }
