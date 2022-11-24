@@ -48,6 +48,15 @@ void myTimerCallback(TimerHandle_t xTimer) {
         xTimerStop(xTimer,0);
     }
   }
+
+    if( xTimerIsTimerActive( auto_reload_timer1 ) == pdFALSE 
+    && xTimerIsTimerActive( auto_reload_timer2 == pdFALSE ))
+     {
+        printf("Done tasks \n");
+         /* 2 Timer is dermon, do restart. */
+        fflush(stdout);
+        esp_restart();
+     }
 }
 
 
@@ -100,9 +109,8 @@ void app_main(void)
     xTimerStart(auto_reload_timer2, portMAX_DELAY);
   }
 
-  // Delete self task to show that timers will work with no user tasks
-  //vTaskDelete(NULL);
 
+     
 
 
 
