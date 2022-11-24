@@ -33,30 +33,27 @@ void myTimerCallback(TimerHandle_t xTimer) {
 
   // Print message if timer 1 expired
   if ((uint32_t)pvTimerGetTimerID(xTimer) == 1) {
-    printf("ahihi, %d \n",count_timer1);
+    printf("ahihi. Count = %d \n",count_timer1);
     count_timer1++;
     if(count_timer1 >= 10){
+      
         xTimerStop(xTimer,0);
+        
     }
   }
 
   // Print message if timer 2 expired
   if ((uint32_t)pvTimerGetTimerID(xTimer) == 2) {
-    printf("ihaha, %d \n",count_timer2);
+    printf("ihaha. Count = %d \n",count_timer2);
     count_timer2++;
     if(count_timer2 >= 5){
         xTimerStop(xTimer,0);
+        
     }
+   
   }
 
-    if( xTimerIsTimerActive( auto_reload_timer1 ) == pdFALSE 
-    && xTimerIsTimerActive( auto_reload_timer2 == pdFALSE ))
-     {
-        printf("Done tasks \n");
-         /* 2 Timer is dermon, do restart. */
-        fflush(stdout);
-        esp_restart();
-     }
+    
 }
 
 
@@ -108,8 +105,14 @@ void app_main(void)
     xTimerStart(auto_reload_timer1, portMAX_DELAY);
     xTimerStart(auto_reload_timer2, portMAX_DELAY);
   }
+  vTaskDelay(25000 / portTICK_PERIOD_MS);
 
-
+  if( xTimerIsTimerActive( auto_reload_timer1 ) == pdFALSE 
+    && xTimerIsTimerActive( auto_reload_timer2 ) == pdFALSE )
+     {
+        printf("\t *** \t Done tasks \t***\n");
+        
+     }
      
 
 
