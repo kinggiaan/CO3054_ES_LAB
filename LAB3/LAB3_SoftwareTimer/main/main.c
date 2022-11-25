@@ -27,20 +27,16 @@ int count_timer2 = 0;
 
 // Called when one of the timers expires
 void myTimerCallback(TimerHandle_t xTimer)
-{
-
-  // Print message if timer 1 expired
+{  // Print message if timer 1 expired
   if ((uint32_t)pvTimerGetTimerID(xTimer) == 1)
   {
     printf("ahihi. Count = %d \n", count_timer1);
     count_timer1++;
     if (count_timer1 >= 10)
     {
-
       xTimerStop(xTimer, 0);
     }
   }
-
   // Print message if timer 2 expired
   if ((uint32_t)pvTimerGetTimerID(xTimer) == 2)
   {
@@ -96,9 +92,10 @@ void app_main(void)
   }
   vTaskDelay(25000 / portTICK_PERIOD_MS);
 
-  if (xTimerIsTimerActive(auto_reload_timer1) == pdFALSE && xTimerIsTimerActive(auto_reload_timer2) == pdFALSE)
+  if (xTimerIsTimerActive(auto_reload_timer1) == pdFALSE 
+  && xTimerIsTimerActive(auto_reload_timer2) == pdFALSE)
   {
-    printf("\t *** \t Done tasks \t***\n");
+    printf("*** \t Done tasks \t***\n");
   }
 
 
